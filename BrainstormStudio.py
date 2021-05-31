@@ -2,139 +2,27 @@ import sys
 import pickle
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QScrollArea
-from PyQt5.QtCore import Qt, QEasingCurve
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QApplication,
+    QWidget,
+    QHBoxLayout,
+    QVBoxLayout,
+    QLabel,
+    QScrollArea,
+)
+from PyQt5.QtCore import (
+    Qt,
+    QEasingCurve,
+)
 
 from MangoUI import Button, SliderLayout
 from ColorsUtils import Hex_to_RGB, visibleFontColor
+from Projects import Component, Project, ProjectView, NewProjectView
 
-class Component:
-    def __init__(self, title = 'New Component'):
-        self.title = title
-        self.technologies = []
-
-    def addTechnology(self, technology):
-        self.technologies.append(technology)
-
-class Project:
-    def __init__(self, title = 'New Project', description = ''):
-        self.title = title
-        self.description = description
-        self.components = []
-
-    def addComponent(self, component):
-        self.components.append(component)
-
-class ProjectView(QWidget):
-    def __init__(self, project, iconsData):
-        super().__init__()
-        self.project = project
-        self.iconsData = iconsData
-        self.initWidget()
-
-    def initWidget(self):
-        self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet(f'''
-        QWidget {{
-            background-color: rgba(255, 255, 255, 20);
-        }}
-        QWidget:hover {{
-            background-color: rgba(255, 255, 255, 55);
-        }}
-        ''')
-        self.vBoxMain = QVBoxLayout()
-
-        self.title = QLabel()
-        self.title.setWordWrap(True)
-        self.title.setText(self.project.title)
-        self.title.setStyleSheet(f'''
-            QLabel {{
-                color: rgb(102, 179, 255);
-                background-color: transparent;
-                font-size: 12pt;
-                padding-top: 12px;
-                padding-bottom: 6px;
-            }}
-        ''')
-        self.vBoxMain.addWidget(self.title)
-
-        self.description = QLabel()
-        self.description.setWordWrap(True)
-        self.description.setText(self.project.description)
-        self.description.setStyleSheet(f'''
-            QLabel {{
-                color: rgb(255, 255, 255);
-                background-color: transparent;
-                font-size: 10pt;
-            }}
-        ''')
-        self.vBoxMain.addWidget(self.description)
-
-        for comp in self.project.components:
-            hBoxComp = QHBoxLayout()
-            componentTitle = QLabel()
-            componentTitle.setText(comp.title + ':')
-            componentTitle.setStyleSheet(f'''
-                QLabel {{
-                    color: rgb(255, 255, 255);
-                    background-color: transparent;
-                    font-size: 9pt;
-                    padding-right: 5px;
-                }}
-            ''')
-
-            hBoxComp.addWidget(componentTitle)
-
-            for tech in comp.technologies:
-                techWidget = QWidget()
-                techWidget.setAttribute(Qt.WA_StyledBackground, True)
-                techWidget.setStyleSheet(f'''
-                    QWidget {{
-                        color: {visibleFontColor(self.iconsData[tech]['color'])};
-                        background-color: {self.iconsData[tech]['color']};
-                        font-size: 8pt;
-                        border: 2px solid rgb(0, 0, 0);
-                        border-radius: 18px;
-                    }}
-                    QWidget:hover {{
-                        background-color: {'#BF' + self.iconsData[tech]['color'].lstrip('#')};
-                    }}
-                ''')
-
-                hBoxTech = QHBoxLayout()
-
-                techIcon = QPixmap('simple-icons/iconspng/' + self.iconsData[tech]['file'].rstrip('.svg') + '.png')
-                techIcon = techIcon.scaled(15, 15, Qt.KeepAspectRatio, Qt.FastTransformation)
-                techIconLabel = QLabel()
-                techIconLabel.setPixmap(techIcon)
-                techIconLabel.setStyleSheet(f'''
-                    QLabel {{
-                        background-color: transparent;
-                        border: none;
-                    }}
-                ''')
-                hBoxTech.addWidget(techIconLabel)
-
-                techTitle = QLabel()
-                techTitle.setText(tech)
-                techTitle.setStyleSheet(f'''
-                    QLabel {{
-                        color: {visibleFontColor(self.iconsData[tech]['color'])};
-                        background-color: transparent;
-                        border: none;
-                    }}
-                ''')
-                hBoxTech.addWidget(techTitle)
-
-                techWidget.setLayout(hBoxTech)
-                #techWidget.setFixedHeight(35)
-                hBoxComp.addWidget(techWidget)
-
-            hBoxComp.addStretch()
-            self.vBoxMain.addLayout(hBoxComp)
-
-        self.setLayout(self.vBoxMain)
+# ----------------------------------------------------------------------
+# Main Window
+# ----------------------------------------------------------------------
 
 class Window(QMainWindow):
     def __init__(self):
@@ -142,7 +30,7 @@ class Window(QMainWindow):
         self._width = 1200
         self._height = 800
         self._xPos = 400
-        self._yPos = 200
+        self._yPos = -900
         self.loadProjects()
         self.loadIcons()
         self.setColors()
@@ -252,9 +140,21 @@ class Window(QMainWindow):
         self.buttonBrainstormHub.setText('  Brainstorm Hub  ')
         self.buttonBrainstormHub.clicked.connect(self.sliderLayout.slideNext)
 
+        self.buttonTest = Button(
+            primaryColor = self.buttonPrimaryColor,
+            secondaryColor = self.buttonSecondaryColor,
+            parentBackgroundColor = self.mainBackgroundColor,
+            borderWidth = 2,
+            borderRadius = 8,
+            fontSize = 9,
+        )
+        self.buttonTest.setText('  Test  ')
+        self.buttonTest.clicked.connect(self.buttonTestFunction)
+
         self.topButtonBarLayout = QHBoxLayout()
         self.topButtonBarLayout.addWidget(self.buttonProjectsView)
         self.topButtonBarLayout.addWidget(self.buttonBrainstormHub)
+        self.topButtonBarLayout.addWidget(self.buttonTest)
         self.topButtonBarLayout.addStretch()
 
         self.vBoxMain = QVBoxLayout()
@@ -266,6 +166,10 @@ class Window(QMainWindow):
         self.setCentralWidget(self.centralWidget)
 
         self.show()
+
+    def buttonTestFunction(self):
+        dlg = NewProjectView(self.slideBackgroundColorLeft, self.slideBackgroundColorRight)
+        dlg.exec()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
