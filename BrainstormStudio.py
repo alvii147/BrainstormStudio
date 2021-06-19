@@ -16,7 +16,7 @@ from PyQt5.QtCore import (
     QEasingCurve,
 )
 
-from MangoUI import Button, SliderLayout
+from MangoUI import Button, Slider
 from ColorsUtils import Hex_to_RGB, visibleFontColor
 from Projects import Component, Project, ProjectView, NewProjectView
 
@@ -67,7 +67,7 @@ class Window(QMainWindow):
             }}
         ''')
 
-        self.sliderLayout = SliderLayout(
+        self.slider = Slider(
             direction = Qt.Horizontal,
             duration = 500,
             animationType = QEasingCurve.OutQuad,
@@ -98,7 +98,7 @@ class Window(QMainWindow):
         self.projectsScrollView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.projectsScrollView.setWidgetResizable(True)
         self.projectsScrollView.setWidget(self.projectsViewContainer)
-        self.sliderLayout.addWidget(self.projectsScrollView)
+        self.slider.addWidget(self.projectsScrollView)
 
         self.title2 = QLabel()
         self.title2.setText('Where ideas are born')
@@ -116,7 +116,7 @@ class Window(QMainWindow):
                 background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.slideBackgroundColorLeft}, stop:1 {self.slideBackgroundColorRight});
             }}
         ''')
-        self.sliderLayout.addWidget(self.container2)
+        self.slider.addWidget(self.container2)
 
         self.buttonProjectsView = Button(
             primaryColor = self.buttonPrimaryColor,
@@ -127,7 +127,7 @@ class Window(QMainWindow):
             fontSize = 9,
         )
         self.buttonProjectsView.setText('  Projects  ')
-        self.buttonProjectsView.clicked.connect(self.sliderLayout.slidePrevious)
+        self.buttonProjectsView.clicked.connect(self.slider.slidePrevious)
 
         self.buttonBrainstormHub = Button(
             primaryColor = self.buttonPrimaryColor,
@@ -138,9 +138,9 @@ class Window(QMainWindow):
             fontSize = 9,
         )
         self.buttonBrainstormHub.setText('  Brainstorm Hub  ')
-        self.buttonBrainstormHub.clicked.connect(self.sliderLayout.slideNext)
+        self.buttonBrainstormHub.clicked.connect(self.slider.slideNext)
 
-        self.buttonTest = Button(
+        self.buttonNewProject = Button(
             primaryColor = self.buttonPrimaryColor,
             secondaryColor = self.buttonSecondaryColor,
             parentBackgroundColor = self.mainBackgroundColor,
@@ -148,18 +148,18 @@ class Window(QMainWindow):
             borderRadius = 8,
             fontSize = 9,
         )
-        self.buttonTest.setText('  Test  ')
-        self.buttonTest.clicked.connect(self.buttonTestFunction)
+        self.buttonNewProject.setText('  New Project +  ')
+        self.buttonNewProject.clicked.connect(self.buttonNewProjectClicked)
 
         self.topButtonBarLayout = QHBoxLayout()
         self.topButtonBarLayout.addWidget(self.buttonProjectsView)
         self.topButtonBarLayout.addWidget(self.buttonBrainstormHub)
-        self.topButtonBarLayout.addWidget(self.buttonTest)
         self.topButtonBarLayout.addStretch()
+        self.topButtonBarLayout.addWidget(self.buttonNewProject)
 
         self.vBoxMain = QVBoxLayout()
         self.vBoxMain.addLayout(self.topButtonBarLayout)
-        self.vBoxMain.addWidget(self.sliderLayout)
+        self.vBoxMain.addWidget(self.slider)
 
         self.centralWidget = QWidget(self)
         self.centralWidget.setLayout(self.vBoxMain)
@@ -167,9 +167,47 @@ class Window(QMainWindow):
 
         self.show()
 
-    def buttonTestFunction(self):
-        dlg = NewProjectView(self.slideBackgroundColorLeft, self.slideBackgroundColorRight)
-        dlg.exec()
+    def buttonNewProjectClicked(self):
+        backgroundColors = {
+            'left': self.slideBackgroundColorLeft,
+            'right': self.slideBackgroundColorRight,
+        }
+
+        buttonColors = {
+            'primary': self.buttonPrimaryColor,
+            'secondary': self.buttonSecondaryColor,
+            'background': self.mainBackgroundColor,
+        }
+
+        dlg = NewProjectView(
+            backgroundColors = backgroundColors,
+            buttonColors = buttonColors,
+            iconsData = self.iconsData,
+        )
+        exitStatus = dlg.exec()
+
+        if exitStatus == 1:
+            prj = Project(
+                title = dlg.projectTitle.text(),
+                description = dlg.projectDescription.toPlainText(),
+            )
+
+            rootItem = dlg.componentTree.invisibleRootItem()
+            for i in range(rootItem.childCount()):
+                compItem = rootItem.child(i)
+                comp = Component(title = compItem.text(0))
+
+                for j in range(compItem.childCount()):
+                    techItem = compItem.child(j)
+                    comp.addTechnology(techItem.text(0))
+
+                prj.addComponent(comp)
+
+            self.projectsList.append(prj)
+            with open('projectlist.pkl', 'wb') as projectlistfile:
+                pickle.dump(self.projectsList, projectlistfile, pickle.HIGHEST_PROTOCOL)
+
+            self.initUI()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

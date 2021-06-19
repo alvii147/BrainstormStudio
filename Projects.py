@@ -2,11 +2,16 @@ from PyQt5.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
+    QLayout,
     QLabel,
     QLineEdit,
     QTextEdit,
     QDialog,
     QDialogButtonBox,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QComboBox,
+    QSizePolicy,
 )
 from PyQt5.QtCore import (
     Qt,
@@ -16,8 +21,8 @@ from PyQt5.QtGui import (
     QCursor,
 )
 
-from ColorsUtils import visibleFontColor
-from Layouts import QFlowLayout
+from MangoUI import Button, TagBox, FlowLayout
+from ColorsUtils import visibleFontColor, brightnessAdjuster
 
 # ----------------------------------------------------------------------
 # Project Component Class
@@ -94,7 +99,7 @@ class ProjectView(QWidget):
         self.vBoxMain.addWidget(self.description)
 
         for comp in self.project.components:
-            hBoxComp = QFlowLayout()
+            hBoxComp = FlowLayout()
             componentTitle = QLabel()
             componentTitle.setText(comp.title + ':')
             componentTitle.setStyleSheet(f'''
@@ -167,24 +172,45 @@ class ProjectView(QWidget):
 # ----------------------------------------------------------------------
 
 class NewProjectView(QDialog):
-    def __init__(self, backgroundColorLeft, backgroundColorRight):
+    def __init__(
+        self,
+        backgroundColors = {
+            'left': 'rgb(50, 50, 50)',
+            'right': 'rgb(200, 200, 200)',
+        },
+        buttonColors = {
+            'primary': 'rgb(0, 0, 255)',
+            'secondary': 'rgb(0, 0, 0)',
+            'background': 'rgb(240, 240, 240)',
+        },
+        iconsData = {},
+    ):
         super().__init__()
-        #self._width = 350
-        #self._height = 400
-        self.backgroundColorLeft = backgroundColorLeft
-        self.backgroundColorRight = backgroundColorRight
+        self.backgroundColors = backgroundColors
+        self.buttonColors = buttonColors
+        self.iconsData = iconsData
         self.initUI()
 
     def initUI(self):
-        #self.setFixedSize(self._width, self._height)
-        self.setWindowTitle("New Project")
+        self.setWindowTitle('New Project')
         self.setStyleSheet(f'''
             QDialog {{
-                background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.backgroundColorLeft}, stop:1 {self.backgroundColorRight});
+                background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.backgroundColors['left']}, stop:1 {self.backgroundColors['right']});
             }}
         ''')
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         self.vBoxMain = QVBoxLayout()
+
+        self.projectTitleLabel = QLabel()
+        self.projectTitleLabel.setText('Project Title')
+        self.projectTitleLabel.setStyleSheet(f'''
+            QLabel {{
+                color: rgb(255, 255, 255);
+                font-size: 11pt;
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.projectTitleLabel)
 
         self.projectTitle = QLineEdit()
         self.projectTitle.setStyleSheet(f'''
@@ -197,6 +223,16 @@ class NewProjectView(QDialog):
         ''')
         self.vBoxMain.addWidget(self.projectTitle)
 
+        self.projectDescriptionLabel = QLabel()
+        self.projectDescriptionLabel.setText('Project Description')
+        self.projectDescriptionLabel.setStyleSheet(f'''
+            QLabel {{
+                color: rgb(255, 255, 255);
+                font-size: 11pt;
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.projectDescriptionLabel)
+
         self.projectDescription = QTextEdit()
         self.projectDescription.setStyleSheet(f'''
             QTextEdit {{
@@ -208,4 +244,246 @@ class NewProjectView(QDialog):
         ''')
         self.vBoxMain.addWidget(self.projectDescription)
 
+        self.componentTreeLabel = QLabel()
+        self.componentTreeLabel.setText('Project Components')
+        self.componentTreeLabel.setStyleSheet(f'''
+            QLabel {{
+                color: rgb(255, 255, 255);
+                font-size: 11pt;
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.componentTreeLabel)
+
+        self.componentTree = QTreeWidget()
+        self.componentTree.setHeaderHidden(True)
+        self.componentTree.setStyleSheet(f'''
+            QTreeWidget {{
+                color: rgb(255, 255, 255);
+                background-color: rgb(0, 0, 26);
+                border-radius: 8px;
+                font-size: 11pt;
+            }}
+            QTreeWidget::item:selected:active {{
+                color: {self.buttonColors['secondary']};
+                background: {self.buttonColors['primary']};
+                border: 1px solid rgb(0, 0, 0);
+            }}
+            QTreeWidget::item:selected:!active {{
+                color: {self.buttonColors['secondary']};
+                background: {self.buttonColors['primary']};
+                border: 1px solid rgb(0, 0, 0);
+            }}
+            QTreeWidget::item:hover {{
+                background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.backgroundColors['left']}, stop:1 {self.backgroundColors['right']});
+                border: 1px solid rgb(0, 0, 0);
+            }}
+            QTreeWidget::branch:has-children:!has-siblings:closed,
+            QTreeWidget::branch:closed:has-children:has-siblings {{
+                border-image: none;
+                image: url(img/branch-closed.png);
+            }}
+            QTreeWidget::branch:open:has-children:!has-siblings,
+            QTreeWidget::branch:open:has-children:has-siblings  {{
+                border-image: none;
+                image: url(img/branch-open.png);
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.componentTree)
+
+        self.hBoxButton = QHBoxLayout()
+
+        self.addComponentButton = Button(
+            primaryColor = self.buttonColors['primary'],
+            secondaryColor = self.buttonColors['secondary'],
+            parentBackgroundColor = self.buttonColors['background'],
+            borderWidth = 2,
+            borderRadius = 8,
+            fontSize = 9,
+        )
+        self.addComponentButton.setText('Add Component')
+        self.addComponentButton.clicked.connect(self.buttonNewComponentClicked)
+        self.hBoxButton.addWidget(self.addComponentButton)
+
+        self.editComponentButton = Button(
+            primaryColor = self.buttonColors['primary'],
+            secondaryColor = self.buttonColors['secondary'],
+            parentBackgroundColor = self.buttonColors['background'],
+            borderWidth = 2,
+            borderRadius = 8,
+            fontSize = 9,
+        )
+        self.editComponentButton.setText('Edit Component')
+        self.hBoxButton.addWidget(self.editComponentButton)
+
+        self.vBoxMain.addLayout(self.hBoxButton)
+
+        self.addProjectButton = Button(
+            primaryColor = self.buttonColors['primary'],
+            secondaryColor = self.buttonColors['secondary'],
+            parentBackgroundColor = self.buttonColors['background'],
+            borderWidth = 2,
+            borderRadius = 8,
+            fontSize = 9,
+        )
+        self.addProjectButton.setText('Add Project')
+        self.addProjectButton.clicked.connect(self.buttonAddProjectClicked)
+        self.vBoxMain.addWidget(self.addProjectButton)
+
         self.setLayout(self.vBoxMain)
+
+    def buttonNewComponentClicked(self):
+        backgroundColors = self.backgroundColors
+        buttonColors = self.buttonColors
+
+        dlg = NewTechnologyView(
+            backgroundColors = backgroundColors,
+            buttonColors = buttonColors,
+            iconsData = self.iconsData,
+        )
+        exitStatus = dlg.exec()
+
+        if exitStatus == 1:
+            compName = dlg.componentName.text()
+            techList = dlg.tagbox.tagList
+
+            compItem = QTreeWidgetItem()
+            compItem.setText(0, compName)
+
+            for tech in techList:
+                techItem = QTreeWidgetItem()
+                techItem.setText(0, tech)
+                compItem.addChild(techItem)
+                
+            self.componentTree.addTopLevelItem(compItem)
+
+    def buttonAddProjectClicked(self):
+        self.done(1)
+
+class NewTechnologyView(QDialog):
+    def __init__(
+        self,
+        backgroundColors = {
+            'left': 'rgb(50, 50, 50)',
+            'right': 'rgb(200, 200, 200)',
+        },
+        buttonColors = {
+            'primary': 'rgb(0, 0, 255)',
+            'secondary': 'rgb(0, 0, 0)',
+            'background': 'rgb(240, 240, 240)',
+        },
+        iconsData = {},
+    ):
+        super().__init__()
+        self.backgroundColors = backgroundColors
+        self.buttonColors = buttonColors
+        self.iconsData = iconsData
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('New Technology')
+        self.setStyleSheet(f'''
+            QDialog {{
+                background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.backgroundColors['left']}, stop:1 {self.backgroundColors['right']});
+            }}
+        ''')
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        self.vBoxMain = QVBoxLayout()
+        self.vBoxMain.setSizeConstraint(QLayout.SetFixedSize)
+
+        self.componentNameLabel = QLabel()
+        self.componentNameLabel.setText('Component Name')
+        self.componentNameLabel.setStyleSheet(f'''
+            QLabel {{
+                color: rgb(255, 255, 255);
+                font-size: 11pt;
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.componentNameLabel)
+
+        self.componentName = QLineEdit()
+        self.componentName.setStyleSheet(f'''
+            QLineEdit {{
+                color: rgb(255, 255, 255);
+                background-color: rgb(0, 0, 26);
+                border-radius: 8px;
+                font-size: 11pt;
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.componentName)
+
+        self.technologiesLabel = QLabel()
+        self.technologiesLabel.setText('Technologies')
+        self.technologiesLabel.setStyleSheet(f'''
+            QLabel {{
+                color: rgb(255, 255, 255);
+                font-size: 11pt;
+            }}
+        ''')
+        self.vBoxMain.addWidget(self.technologiesLabel)
+
+        self.tagbox = TagBox(
+            textColor = self.buttonColors['secondary'],
+            backgroundColor = self.buttonColors['primary'],
+            backgroundColorOnHover = 'rgb(153, 204, 255)',
+        )
+        self.tagbox.removeTag = lambda index: self.removeTechnology(index)
+        self.vBoxMain.addWidget(self.tagbox)
+
+        self.tagChoice = QComboBox()
+        self.tagChoice.setStyleSheet(f'''
+            QComboBox {{
+                color: rgb(255, 255, 255);
+                background-color: rgb(0, 0, 26);
+                border-radius: 8px;
+                font-size: 11pt;
+            }}
+            QComboBox QAbstractItemView {{
+                color: rgb(255, 255, 255);
+                background-color: rgb(0, 0, 26);
+                selection-background-color: rgb(0, 0, 77);
+                border: 2px solid rgb(255, 255, 255);
+            }}
+        ''')
+        for tech in list(self.iconsData.keys()):
+            self.tagChoice.addItem(tech) 
+        self.vBoxMain.addWidget(self.tagChoice)
+
+        self.addTechButton = Button(
+            primaryColor = self.buttonColors['primary'],
+            secondaryColor = self.buttonColors['secondary'],
+            parentBackgroundColor = self.buttonColors['background'],
+            borderWidth = 2,
+            borderRadius = 8,
+            fontSize = 9,
+        )
+        self.addTechButton.setText('Add Technology')
+        self.addTechButton.clicked.connect(self.buttonAddTechClicked)
+        self.vBoxMain.addWidget(self.addTechButton)
+
+        self.addCompButton = Button(
+            primaryColor = self.buttonColors['primary'],
+            secondaryColor = self.buttonColors['secondary'],
+            parentBackgroundColor = self.buttonColors['background'],
+            borderWidth = 2,
+            borderRadius = 8,
+            fontSize = 9,
+        )
+        self.addCompButton.setText('Add Component')
+        self.addCompButton.clicked.connect(self.buttonAddCompClicked)
+        self.vBoxMain.addWidget(self.addCompButton)
+
+        self.setLayout(self.vBoxMain)
+
+    def buttonAddTechClicked(self):
+        self.tagbox.addTag(self.tagChoice.currentText())
+        self.tagChoice.removeItem(self.tagChoice.currentIndex())
+
+    def buttonAddCompClicked(self):
+        self.done(1)
+
+    def removeTechnology(self, index):
+        removedTech = self.tagbox.tagList.pop(index)
+        self.tagbox.initTagBox()
+        self.tagChoice.addItem(removedTech)
+        self.tagChoice.model().sort(0)
