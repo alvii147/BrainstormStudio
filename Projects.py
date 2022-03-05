@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
@@ -13,10 +13,10 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QSizePolicy,
 )
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     Qt,
 )
-from PyQt5.QtGui import (
+from PyQt6.QtGui import (
     QPixmap,
     QCursor,
 )
@@ -61,7 +61,7 @@ class ProjectView(QWidget):
         self.initWidget()
 
     def initWidget(self):
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet(f'''
         QWidget {{
             background-color: rgba(255, 255, 255, 20);
@@ -115,7 +115,7 @@ class ProjectView(QWidget):
 
             for tech in comp.technologies:
                 techWidget = QWidget()
-                techWidget.setAttribute(Qt.WA_StyledBackground, True)
+                techWidget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
                 techWidget.setStyleSheet(f'''
                     QWidget {{
                         color: {visibleFontColor(self.iconsData[tech]['color'])};
@@ -132,7 +132,7 @@ class ProjectView(QWidget):
                 hBoxTech = QHBoxLayout()
 
                 techIcon = QPixmap('simple-icons/iconspng/' + self.iconsData[tech]['file'].rstrip('.svg') + '.png')
-                techIcon = techIcon.scaled(20, 20, Qt.KeepAspectRatio, Qt.FastTransformation)
+                techIcon = techIcon.scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
                 techIconLabel = QLabel()
                 techIconLabel.setPixmap(techIcon)
                 techIconLabel.setStyleSheet(f'''
@@ -162,10 +162,10 @@ class ProjectView(QWidget):
         self.setLayout(self.vBoxMain)
 
     def enterEvent(self, event):
-        self.setCursor(QCursor(Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
     def leaveEvent(self, event):
-        self.setCursor(QCursor(Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
 # ----------------------------------------------------------------------
 # New Project View
@@ -198,7 +198,7 @@ class NewProjectView(QDialog):
                 background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.backgroundColors['left']}, stop:1 {self.backgroundColors['right']});
             }}
         ''')
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         self.vBoxMain = QVBoxLayout()
 
@@ -386,10 +386,10 @@ class NewTechnologyView(QDialog):
                 background: QLinearGradient(x1:0 y1:0, x2:1 y2:0, stop:0 {self.backgroundColors['left']}, stop:1 {self.backgroundColors['right']});
             }}
         ''')
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         self.vBoxMain = QVBoxLayout()
-        self.vBoxMain.setSizeConstraint(QLayout.SetFixedSize)
+        self.vBoxMain.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
         self.componentNameLabel = QLabel()
         self.componentNameLabel.setText('Component Name')

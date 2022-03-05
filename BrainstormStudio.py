@@ -2,7 +2,7 @@ import sys
 import pickle
 import json
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QMainWindow,
     QApplication,
     QWidget,
@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QScrollArea,
 )
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     Qt,
     QEasingCurve,
 )
@@ -27,10 +27,10 @@ from Projects import Component, Project, ProjectView, NewProjectView
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self._width = 1200
-        self._height = 800
+        self._width = 1000
+        self._height = 700
         self._xPos = 400
-        self._yPos = -900
+        self._yPos = 20
         self.loadProjects()
         self.loadIcons()
         self.setColors()
@@ -57,8 +57,10 @@ class Window(QMainWindow):
         self.buttonPrimaryColor = 'rgb(102, 179, 255)'
         self.buttonSecondaryColor = 'rgb(0, 0, 26)'
 
-    def initUI(self):
-        self.setGeometry(self._xPos, self._yPos, self._width, self._height)
+    def initUI(self, setGeometry=True):
+        if setGeometry:
+            self.setGeometry(self._xPos, self._yPos, self._width, self._height)
+
         self.setWindowTitle('Brainstorm Studio')
 
         self.setStyleSheet(f'''
@@ -68,10 +70,10 @@ class Window(QMainWindow):
         ''')
 
         self.slider = Slider(
-            direction = Qt.Horizontal,
-            duration = 500,
-            animationType = QEasingCurve.OutQuad,
-            wrap = False,
+            slideDirection = Qt.Orientation.Horizontal,
+            animationDuration = 500,
+            animationType = QEasingCurve.Type.OutQuad,
+            wrapAround = False,
         )
 
         self.projectsViewSlide = QVBoxLayout()
@@ -94,8 +96,8 @@ class Window(QMainWindow):
             }}
         ''')
 
-        self.projectsScrollView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.projectsScrollView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.projectsScrollView.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.projectsScrollView.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.projectsScrollView.setWidgetResizable(True)
         self.projectsScrollView.setWidget(self.projectsViewContainer)
         self.slider.addWidget(self.projectsScrollView)
@@ -107,7 +109,7 @@ class Window(QMainWindow):
                 color: rgb(255, 255, 255);
             }}
         ''')
-        self.title2.setAlignment(Qt.AlignCenter)
+        self.title2.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.slide2.addWidget(self.title2)
 
         self.container2.setLayout(self.slide2)
@@ -207,9 +209,9 @@ class Window(QMainWindow):
             with open('projectlist.pkl', 'wb') as projectlistfile:
                 pickle.dump(self.projectsList, projectlistfile, pickle.HIGHEST_PROTOCOL)
 
-            self.initUI()
+            self.initUI(setGeometry=False)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     myWin = Window()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
